@@ -1,0 +1,47 @@
+﻿<Window
+	x:Class="ProxyTray.MainWindow"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:commands="clr-namespace:ProxyTray.Commands"
+	xmlns:taskbar="http://www.hardcodet.net/taskbar"
+	SizeToContent="WidthAndHeight"
+	Title="ProxyTray"
+	Visibility="Hidden"
+	>
+	<Window.Resources>
+		<ResourceDictionary>
+			<BitmapImage
+				x:Key="IconNo"
+				UriSource="/Icons/no.ico"
+				/>
+			<BitmapImage
+				x:Key="IconYes"
+				UriSource="/Icons/yes.ico"
+				/>
+			<BitmapImage
+				x:Key="IconUnknown"
+				UriSource="/Icons/unknown.ico"
+				/>
+
+			<commands:ToggleProxyCommand x:Key="ToggleProxy" />
+		</ResourceDictionary>
+	</Window.Resources>
+
+	<Grid>
+		<taskbar:TaskbarIcon
+			IconSource="{StaticResource IconUnknown}"
+			LeftClickCommand="{StaticResource ToggleProxy}"
+			Name="NotificationIcon"
+			ToolTipText="initializing..."
+			>
+			<taskbar:TaskbarIcon.ContextMenu>
+				<ContextMenu>
+					<MenuItem
+						Click="OnExitMenuItemClick"
+						Header="Exit"
+						/>
+				</ContextMenu>
+			</taskbar:TaskbarIcon.ContextMenu>
+		</taskbar:TaskbarIcon>
+	</Grid>
+</Window>
