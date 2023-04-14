@@ -1,14 +1,14 @@
-﻿using System.Management;
-using System.Security.Principal;
+﻿using System;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-namespace ProxyTray;
+using ProxyTray.Monitoring;
+using ProxyTray.Proxy;
+
+namespace ProxyTray.Views;
 
 public partial class MainWindow
 {
-	private ManagementEventWatcher? _managementEventWatcher;
-
 	public MainWindow()
 	{
 		InitializeComponent();
@@ -18,47 +18,67 @@ public partial class MainWindow
 
 	private void StartMonitor()
 	{
-		var currentUser = WindowsIdentity.GetCurrent();
-		if (currentUser.User == null)
-		{
-			MessageBox.Show("Error obtaining current user Windows identity.", "Fatal error", MessageBoxButton.OK, MessageBoxImage.Error);
-			Application.Current.Shutdown(-1);
+		RegistryMonitor.StartMonitor();
+		RegistryMonitor.ProxySettingsChanged += OnProxySettingsChanged;
+	}
+
+	private void StopMonitor()
+	{
+		RegistryMonitor.ProxySettingsChanged -= OnProxySettingsChanged;
+		RegistryMonitor.StopMonitor();
+	}
+
+	private void CheckState()
+	{
+		var lastProxyState = ProxySettings.LastProxyState;
+		if (lastProxyState == ProxyState.Unknown)
 			return;
-		}
 
-		var query = new WqlEventQuery
-		(
-			$@"SELECT * FROM RegistryValueChangeEvent WHERE Hive='HKEY_USERS' AND KeyPath='{currentUser.User.Value}\\{Constants.RegistryKey.Replace(@"\", @"\\")}' AND ValueName='{Constants.ProxyEnabled}'"
-		);
-
-		_managementEventWatcher = new ManagementEventWatcher(query);
-		_managementEventWatcher.EventArrived += (_, _) => UpdateIcon();
-		_managementEventWatcher.Start();
+		var proxySettings = ProxySettings.GetProxySettings();
+		if (proxySettings.State != lastProxyState)
+			ProxySettings.SetProxyState(lastProxyState);
 	}
 
 	private void UpdateIcon()
 	{
-		var settings = ProxySettings.GetProxySettings();
+		var proxySettings = ProxySettings.GetProxySettings();
 
 		Dispatcher.BeginInvoke(() =>
 		{
-			NotificationIcon.ToolTipText = settings.Enabled
-				? string.Format(Constants.ProxyEnabledTooltip, settings.Server)
-				: Constants.ProxyDisabledTooltip;
+			NotificationIcon.ToolTipText = proxySettings.State switch
+			{
+				ProxyState.Enabled => string.Format(Constants.ProxyEnabledTooltip, proxySettings.Server),
+				ProxyState.Disabled => Constants.ProxyDisabledTooltip,
+				_ => Constants.ProxyUnknownTooltip
+			};
 
-			NotificationIcon.IconSource = (BitmapImage)FindResource(settings.Enabled ? Constants.ProxyEnabledIcon : Constants.ProxyDisabledIcon);
+			NotificationIcon.IconSource = (BitmapImage)FindResource
+			(
+				proxySettings.State switch
+				{
+					ProxyState.Enabled => Constants.ProxyEnabledIcon,
+					ProxyState.Disabled => Constants.ProxyDisabledIcon,
+					_ => Constants.ProxyUnknownIcon
+				}
+			);
 		});
 	}
 
-	private void OnExitMenuItemClick(object sender, RoutedEventArgs e)
+	private void ShutdownApplication()
 	{
-		if (_managementEventWatcher is not null)
-		{
-			_managementEventWatcher.Stop();
-			_managementEventWatcher.Dispose();
-		}
-
 		NotificationIcon.Dispose();
 		Application.Current.Shutdown(0);
+	}
+
+	private void OnProxySettingsChanged(object? sender, EventArgs e)
+	{
+		CheckState();
+		UpdateIcon();
+	}
+
+	private void OnExitMenuItemClick(object? sender, RoutedEventArgs e)
+	{
+		StopMonitor();
+		ShutdownApplication();
 	}
 }

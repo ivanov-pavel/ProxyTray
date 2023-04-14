@@ -8,8 +8,10 @@ public static class Constants
 	internal const string ProxyEnabled = "ProxyEnable";
 	internal const string ProxyServer = "ProxyServer";
 
-	internal const string ProxyEnabledTooltip = "Proxy: {0}";
 	internal const string ProxyEnabledIcon = "IconYes";
-	internal const string ProxyDisabledTooltip = "No proxy";
 	internal const string ProxyDisabledIcon = "IconNo";
+	internal const string ProxyUnknownIcon = "IconUnknown";
+	internal const string ProxyEnabledTooltip = "Proxy enabled {0}";
+	internal const string ProxyDisabledTooltip = "No proxy";
+	internal const string ProxyUnknownTooltip = "Unknown";
 }

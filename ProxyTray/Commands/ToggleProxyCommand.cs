@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Input;
 
+using ProxyTray.Proxy;
+
 namespace ProxyTray.Commands;
 
 public class ToggleProxyCommand : ICommand
@@ -15,7 +17,7 @@ public class ToggleProxyCommand : ICommand
 	{
 		try
 		{
-			ProxySettings.ToggleProxy();
+			ProxySettings.ToggleProxyState();
 		}
 		catch (InvalidOperationException exception)
 		{
